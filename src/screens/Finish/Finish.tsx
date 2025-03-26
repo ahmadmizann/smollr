@@ -4,8 +4,10 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { ThemeToggle } from "../../components/ui/theme-toggle";
+import { X } from "lucide-react";
 
 interface OptimizedImage {
+  id: string;
   name: string;
   format: string;
   originalSize: string;
@@ -55,6 +57,7 @@ export const Finish = (): JSX.Element => {
       const thumbnail = URL.createObjectURL(compressedFile);
 
       const optimizedImage: OptimizedImage = {
+        id: crypto.randomUUID(),
         name: file.name,
         format: file.type.split('/')[1].toUpperCase(),
         originalSize: formatFileSize(file.size),
@@ -119,7 +122,13 @@ export const Finish = (): JSX.Element => {
     });
   };
 
+  const handleDeleteImage = (id: string) => {
+    setOptimizedImages(prev => prev.filter(img => img.id !== id));
+  };
+
   const getTotalOptimization = () => {
+    if (optimizedImages.length === 0) return 0;
+    
     const originalSize = optimizedImages.reduce((acc, img) => {
       const size = parseFloat(img.originalSize.split(' ')[0]);
       const unit = img.originalSize.split(' ')[1];
@@ -255,8 +264,14 @@ export const Finish = (): JSX.Element => {
 
                   {/* Image Details */}
                   <div className="flex flex-col gap-3 sm:gap-4 w-full">
-                    {optimizedImages.map((image, index) => (
-                      <div key={index} className="flex items-start gap-3 sm:gap-[21px]">
+                    {optimizedImages.map((image) => (
+                      <div key={image.id} className="group relative flex items-start gap-3 sm:gap-[21px]">
+                        <button
+                          onClick={() => handleDeleteImage(image.id)}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                        >
+                          <X className="w-4 h-4 text-white" />
+                        </button>
                         <img
                           className="w-[50px] h-[50px] sm:w-[67px] sm:h-[67px] object-cover rounded-lg"
                           alt="Optimized image thumbnail"
