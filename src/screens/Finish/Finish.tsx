@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
@@ -28,29 +28,7 @@ export const Finish = (): JSX.Element => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProcessing, setCurrentProcessing] = useState<ProcessingImage | null>(null);
 
-  useEffect(() => {
-    // Dynamically load the Ko-fi widget script
-    const script = document.createElement("script");
-    script.src = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js";
-    script.async = true;
-    script.onload = () => {
-      // Initialize the Ko-fi widget when the script has loaded
-      if (window.kofiWidgetOverlay) {
-        window.kofiWidgetOverlay.draw('ahmadmizanh', {
-          'type': 'floating-chat',
-          'floating-chat.donateButton.text': 'Tip Me',
-          'floating-chat.donateButton.background-color': '#f45d22',
-          'floating-chat.donateButton.text-color': '#fff'
-        });
-      }
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
+  // Format File Size
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -59,6 +37,7 @@ export const Finish = (): JSX.Element => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Image Optimization
   const handleImageOptimization = async (file: File) => {
     try {
       setCurrentProcessing({
@@ -168,15 +147,41 @@ export const Finish = (): JSX.Element => {
     return Math.round(savings);
   };
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js";
+    script.async = true;
+    script.onload = () => {
+      // Initialize the Ko-fi widget when the script is loaded
+      window.kofiWidgetOverlay.draw('ahmadmizanh', {
+        'type': 'floating-chat',
+        'floating-chat.donateButton.text': 'Tip Me',
+        'floating-chat.donateButton.background-color': '#f45d22',
+        'floating-chat.donateButton.text-color': '#fff'
+      });
+    };
+    document.body.appendChild(script);
+
+    // Cleanup: remove the script when the component unmounts
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
   return (
     <div className="bg-white dark:bg-[#0f172a] flex justify-center w-full min-h-screen">
       <div className="bg-white dark:bg-[#0f172a] w-full max-w-[1440px] min-h-screen relative px-4 sm:px-6">
         <div className="flex flex-col w-full max-w-[452px] items-center gap-[18px] mx-auto pt-6 sm:pt-[47px]">
-          {/* Other UI elements remain the same */}
+          {/* Header and other content goes here */}
           
           {/* Ko-fi Widget */}
           <div className="w-full mt-8 rounded-lg dark:bg-gray-800">
-            <div id="kofi-widget-container"></div> {/* Placeholder for the widget */}
+            <iframe
+              id='kofiframe'
+              src='https://ko-fi.com/ahmadmizanh/?hidefeed=true&widget=true&embed=true&preview=true'
+              style={{ border: 'none', width: '100%', height: '712px' }}
+              title='ahmadmizanh'
+            />
           </div>
         </div>
       </div>
