@@ -313,6 +313,18 @@ export const Finish = (): JSX.Element => {
               </CardContent>
             </Card>
           )}
+
+          {/* Ko-fi Widget */}
+          <div className="w-full mt-8">
+            <iframe
+              id='kofiframe'
+              src='https://ko-fi.com/ahmadmizanh/?hidefeed=true&widget=true&embed=true&preview=true'
+              style={{ border: 'none', width: '100%', padding: '4px', background: '#f9f9f9' }}
+              height='712'
+              title='ahmadmizanh'
+              className="rounded-lg dark:bg-gray-800"
+            />
+          </div>
         </div>
       </div>
     </div>
