@@ -315,7 +315,7 @@ export const Finish = (): JSX.Element => {
           )}
 
           {/* Ko-fi Widget */}
-          <div className="w-full mt-8 rounded-lg overflow-hidden dark:bg-gray-800">
+          <div className="w-full mt-8 rounded-lg dark:bg-gray-800">
             <iframe
             id='kofiframe'
             src='https://ko-fi.com/ahmadmizanh/?hidefeed=true&widget=true&embed=true&preview=true'
