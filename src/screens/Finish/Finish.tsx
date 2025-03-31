@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
@@ -27,8 +27,8 @@ export const Finish = (): JSX.Element => {
   const [optimizedImages, setOptimizedImages] = useState<OptimizedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProcessing, setCurrentProcessing] = useState<ProcessingImage | null>(null);
+  const [isTipMeVisible, setIsTipMeVisible] = useState(true); // State for visibility of the tip me section
 
-  // Format File Size
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -37,7 +37,6 @@ export const Finish = (): JSX.Element => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Image Optimization
   const handleImageOptimization = async (file: File) => {
     try {
       setCurrentProcessing({
@@ -147,42 +146,46 @@ export const Finish = (): JSX.Element => {
     return Math.round(savings);
   };
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js";
-    script.async = true;
-    script.onload = () => {
-      // Initialize the Ko-fi widget when the script is loaded
-      window.kofiWidgetOverlay.draw('ahmadmizanh', {
-        'type': 'floating-chat',
-        'floating-chat.donateButton.text': 'Tip Me',
-        'floating-chat.donateButton.background-color': '#f45d22',
-        'floating-chat.donateButton.text-color': '#fff'
-      });
-    };
-    document.body.appendChild(script);
-
-    // Cleanup: remove the script when the component unmounts
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+  const handleTipClick = () => {
+    // Add your tipping logic or redirection here.
+    alert('Thank you for considering to tip us!');
+    setIsTipMeVisible(false); // Hide tip section after clicking
+  };
 
   return (
     <div className="bg-white dark:bg-[#0f172a] flex justify-center w-full min-h-screen">
       <div className="bg-white dark:bg-[#0f172a] w-full max-w-[1440px] min-h-screen relative px-4 sm:px-6">
         <div className="flex flex-col w-full max-w-[452px] items-center gap-[18px] mx-auto pt-6 sm:pt-[47px]">
-          {/* Header and other content goes here */}
+          {/* Your existing header code here... */}
           
-          {/* Ko-fi Widget */}
-          <div className="w-full mt-8 rounded-lg dark:bg-gray-800">
-            <iframe
-              id='kofiframe'
-              src='https://ko-fi.com/ahmadmizanh/?hidefeed=true&widget=true&embed=true&preview=true'
-              style={{ border: 'none', width: '100%', height: '712px' }}
-              title='ahmadmizanh'
-            />
-          </div>
+          <Separator className="w-full dark:border-gray-700" />
+
+          {/* Tip Me Section */}
+          {isTipMeVisible && (
+            <div className="w-full flex justify-center mt-6">
+              <Button
+                className="bg-[#ffbc04] hover:bg-[#e6aa04] text-white font-semibold py-2 px-4 rounded-lg"
+                onClick={handleTipClick}
+              >
+                Tip Me
+              </Button>
+            </div>
+          )}
+
+          {/* Drop Zone */}
+          <Card 
+            className={`w-full h-[200px] sm:h-[254px] ${isDragging ? 'bg-[#ffbc04]/10' : 'bg-[#d7deeb3d] dark:bg-gray-800/50'} rounded-[28px] border-2 border-dashed ${isDragging ? 'border-[#ffbc04]' : 'border-[#a4a4a4] dark:border-gray-700'} cursor-pointer transition-colors duration-200`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => document.getElementById('fileInput')?.click()}
+          >
+            {/* Your drop zone code here... */}
+          </Card>
+
+          {/* Results Section */}
+          {/* Your results section goes here... */}
+          
         </div>
       </div>
     </div>
