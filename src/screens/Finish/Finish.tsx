@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import imageCompression from "browser-image-compression";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
@@ -28,20 +28,43 @@ export const Finish = (): JSX.Element => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProcessing, setCurrentProcessing] = useState<ProcessingImage | null>(null);
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js";
+    script.async = true;
+    document.body.appendChild(script);
+
+    const kofiScript = document.createElement("script");
+    kofiScript.innerHTML = `
+      kofiWidgetOverlay.draw('ahmadmizanh', {
+        'type': 'floating-chat',
+        'floating-chat.donateButton.text': 'Tip Me',
+        'floating-chat.donateButton.background-color': '#f45d22',
+        'floating-chat.donateButton.text-color': '#fff'
+      });
+    `;
+    document.body.appendChild(kofiScript);
+
+    return () => {
+      document.body.removeChild(script);
+      document.body.removeChild(kofiScript);
+    };
+  }, []);
+
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const handleImageOptimization = async (file: File) => {
     try {
       setCurrentProcessing({
         name: file.name,
-        format: file.type.split('/')[1].toUpperCase(),
-        progress: 0
+        format: file.type.split("/")[1].toUpperCase(),
+        progress: 0,
       });
 
       const options = {
@@ -49,8 +72,8 @@ export const Finish = (): JSX.Element => {
         maxWidthOrHeight: 1920,
         useWebWorker: true,
         onProgress: (progress: number) => {
-          setCurrentProcessing(prev => prev ? { ...prev, progress } : null);
-        }
+          setCurrentProcessing((prev) => (prev ? { ...prev, progress } : null));
+        },
       };
 
       const compressedFile = await imageCompression(file, options);
@@ -59,25 +82,25 @@ export const Finish = (): JSX.Element => {
       const optimizedImage: OptimizedImage = {
         id: crypto.randomUUID(),
         name: file.name,
-        format: file.type.split('/')[1].toUpperCase(),
+        format: file.type.split("/")[1].toUpperCase(),
         originalSize: formatFileSize(file.size),
         optimizedSize: formatFileSize(compressedFile.size),
         thumbnail,
         blob: compressedFile,
       };
 
-      setOptimizedImages(prev => [...prev, optimizedImage]);
+      setOptimizedImages((prev) => [...prev, optimizedImage]);
     } catch (error) {
-      console.error('Error optimizing image:', error);
+      console.error("Error optimizing image:", error);
     }
   };
 
   const handleFiles = async (files: FileList) => {
     setIsProcessing(true);
-    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-    
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"));
+
     if (imageFiles.length > 10) {
-      alert('Please select up to 10 images only');
+      alert("Please select up to 10 images only");
       setIsProcessing(false);
       return;
     }
@@ -113,7 +136,7 @@ export const Finish = (): JSX.Element => {
 
   const handleDownloadAll = () => {
     optimizedImages.forEach((image) => {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = URL.createObjectURL(image.blob);
       link.download = `optimized-${image.name}`;
       document.body.appendChild(link);
@@ -123,22 +146,22 @@ export const Finish = (): JSX.Element => {
   };
 
   const handleDeleteImage = (id: string) => {
-    setOptimizedImages(prev => prev.filter(img => img.id !== id));
+    setOptimizedImages((prev) => prev.filter((img) => img.id !== id));
   };
 
   const getTotalOptimization = () => {
     if (optimizedImages.length === 0) return 0;
-    
+
     const originalSize = optimizedImages.reduce((acc, img) => {
-      const size = parseFloat(img.originalSize.split(' ')[0]);
-      const unit = img.originalSize.split(' ')[1];
-      return acc + (unit === 'MB' ? size * 1024 : size);
+      const size = parseFloat(img.originalSize.split(" ")[0]);
+      const unit = img.originalSize.split(" ")[1];
+      return acc + (unit === "MB" ? size * 1024 : size);
     }, 0);
 
     const optimizedSize = optimizedImages.reduce((acc, img) => {
-      const size = parseFloat(img.optimizedSize.split(' ')[0]);
-      const unit = img.optimizedSize.split(' ')[1];
-      return acc + (unit === 'MB' ? size * 1024 : size);
+      const size = parseFloat(img.optimizedSize.split(" ")[0]);
+      const unit = img.optimizedSize.split(" ")[1];
+      return acc + (unit === "MB" ? size * 1024 : size);
     }, 0);
 
     const savings = ((originalSize - optimizedSize) / originalSize) * 100;
@@ -166,166 +189,166 @@ export const Finish = (): JSX.Element => {
                   <img className="absolute w-3 h-[12px] sm:w-4 sm:h-[15px] top-0 left-[22px] sm:left-[29px]" alt="Vector" src="/vector-3.svg" />
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-center gap-2.5">
-                <div className="flex flex-col w-full sm:w-[377px] items-start gap-2">
-                  <div className="flex items-center gap-2 w-full">
-                    <div className="w-fit mt-[-1.00px] font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0] leading-[normal]">
-                      <span className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0]">
-                        smollpng{" "}
-                      </span>
-                      <span className="text-[10px] sm:text-xs">by</span>
-                      <span className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0]">
-                        &nbsp;
-                      </span>
-                    </div>
-                    <img className="h-4 sm:h-5 w-auto" alt="Frame" src="/frame-17.svg" />
+            <div className="flex items-center gap-2.5">
+              <div className="flex flex-col w-full sm:w-[377px] items-start gap-2">
+                <div className="flex items-center gap-2 w-full">
+                  <div className="w-fit mt-[-1.00px] font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0] leading-[normal]">
+                    <span className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0]">
+                      smollpng{" "}
+                    </span>
+                    <span className="text-[10px] sm:text-xs">by</span>
+                    <span className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0]">
+                      &nbsp;
+                    </span>
                   </div>
-                  <div className="w-full font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#1e1e1e80] dark:text-gray-400 text-[10px] sm:text-xs tracking-[0] leading-[normal]">
-                    Smart AVIF, WebP, PNG and JPEG Compression for Faster Websites
-                  </div>
+                  <img className="h-4 sm:h-5 w-auto" alt="Frame" src="/frame-17.svg" />
+                </div>
+                <div className="w-full font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#1e1e1e80] dark:text-gray-400 text-[10px] sm:text-xs tracking-[0] leading-[normal]">
+                  Smart AVIF, WebP, PNG and JPEG Compression for Faster Websites
                 </div>
               </div>
             </div>
-            
-            <ThemeToggle />
           </div>
 
-          <Separator className="w-full dark:border-gray-700" />
+          <ThemeToggle />
+        </div>
 
-          {/* Drop Zone */}
-          <Card 
-            className={`w-full h-[200px] sm:h-[254px] ${isDragging ? 'bg-[#ffbc04]/10' : 'bg-[#d7deeb3d] dark:bg-gray-800/50'} rounded-[28px] border-2 border-dashed ${isDragging ? 'border-[#ffbc04]' : 'border-[#a4a4a4] dark:border-gray-700'} cursor-pointer transition-colors duration-200`}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => document.getElementById('fileInput')?.click()}
-          >
-            <input
-              type="file"
-              id="fileInput"
-              className="hidden"
-              multiple
-              accept="image/*"
-              onChange={handleFileInput}
-            />
-            <CardContent className="flex flex-col items-center justify-center h-full p-0">
-              {isProcessing && currentProcessing ? (
-                <div className="flex flex-col items-center w-full max-w-md p-4 sm:p-6">
-                  <h3 className="text-[#ffbc04] font-bold text-lg sm:text-xl mb-2">
-                    Wait a minute... ({optimizedImages.length}/{optimizedImages.length + 1})
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
-                    Your image is being optimized
-                  </p>
-                  <div className="w-full space-y-2">
-                    <div className="flex justify-between text-xs sm:text-sm">
-                      <span className="truncate max-w-[150px] sm:max-w-[200px]">{currentProcessing.name}</span>
-                      <span>{currentProcessing.format}</span>
-                    </div>
-                    <div className="w-full h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-[#ffbc04] transition-all duration-300"
-                        style={{ width: `${currentProcessing.progress}%` }}
-                      />
-                    </div>
+        <Separator className="w-full dark:border-gray-700" />
+
+        {/* Drop Zone */}
+        <Card
+          className={`w-full h-[200px] sm:h-[254px] ${isDragging ? "bg-[#ffbc04]/10" : "bg-[#d7deeb3d] dark:bg-gray-800/50"} rounded-[28px] border-2 border-dashed ${isDragging ? "border-[#ffbc04]" : "border-[#a4a4a4] dark:border-gray-700"} cursor-pointer transition-colors duration-200`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => document.getElementById("fileInput")?.click()}
+        >
+          <input
+            type="file"
+            id="fileInput"
+            className="hidden"
+            multiple
+            accept="image/*"
+            onChange={handleFileInput}
+          />
+          <CardContent className="flex flex-col items-center justify-center h-full p-0">
+            {isProcessing && currentProcessing ? (
+              <div className="flex flex-col items-center w-full max-w-md p-4 sm:p-6">
+                <h3 className="text-[#ffbc04] font-bold text-lg sm:text-xl mb-2">
+                  Wait a minute... ({optimizedImages.length}/{optimizedImages.length + 1})
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
+                  Your image is being optimized
+                </p>
+                <div className="w-full space-y-2">
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="truncate max-w-[150px] sm:max-w-[200px]">{currentProcessing.name}</span>
+                    <span>{currentProcessing.format}</span>
+                  </div>
+                  <div className="w-full h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#ffbc04] transition-all duration-300"
+                      style={{ width: `${currentProcessing.progress}%` }}
+                    />
                   </div>
                 </div>
-              ) : (
-                <>
-                  <img className="w-[90px] h-[68px] sm:w-[111px] sm:h-[85px] mb-3" alt="Group" src="/group-3.png" />
-                  <div className="flex flex-col items-center">
-                    <h2 className="font-['Plus_Jakarta_Sans',Helvetica] font-bold text-black dark:text-white text-xl sm:text-2xl">
-                      Drop your Images here
-                    </h2>
-                    <p className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#00000080] dark:text-gray-400 text-xs sm:text-sm">
-                      Up to 10 Images
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            ) : (
+              <>
+                <img className="w-[90px] h-[68px] sm:w-[111px] sm:h-[85px] mb-3" alt="Group" src="/group-3.png" />
+                <div className="flex flex-col items-center">
+                  <h2 className="font-['Plus_Jakarta_Sans',Helvetica] font-bold text-black dark:text-white text-xl sm:text-2xl">
+                    Drop your Images here
+                  </h2>
+                  <p className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#00000080] dark:text-gray-400 text-xs sm:text-sm">
+                    Up to 10 Images
+                  </p>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
-          {/* Results */}
-          {optimizedImages.length > 0 && (
-            <Card className="w-full bg-[#d7deeb3d] dark:bg-gray-800/50 rounded-[28px] border-2 border-dashed border-[#a4a4a4] dark:border-gray-700">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col items-start gap-[20px] sm:gap-[25px]">
-                  {/* Header */}
-                  <div className="flex flex-col items-start gap-[10px] sm:gap-[13px] w-full">
-                    <h2 className="font-['Plus_Jakarta_Sans',Helvetica] font-bold text-[#ffbc04] text-xl sm:text-2xl">
-                      Smoll Just saved you {getTotalOptimization()}%
-                    </h2>
-                    <p className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#1e1e1e80] dark:text-gray-400 text-[10px] sm:text-xs">
-                      {optimizedImages.length} image{optimizedImages.length > 1 ? 's' : ''} optimized
-                    </p>
-                  </div>
+        {/* Results */}
+        {optimizedImages.length > 0 && (
+          <Card className="w-full bg-[#d7deeb3d] dark:bg-gray-800/50 rounded-[28px] border-2 border-dashed border-[#a4a4a4] dark:border-gray-700">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col items-start gap-[20px] sm:gap-[25px]">
+                {/* Header */}
+                <div className="flex flex-col items-start gap-[10px] sm:gap-[13px] w-full">
+                  <h2 className="font-['Plus_Jakarta_Sans',Helvetica] font-bold text-[#ffbc04] text-xl sm:text-2xl">
+                    Smoll Just saved you {getTotalOptimization()}%
+                  </h2>
+                  <p className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#1e1e1e80] dark:text-gray-400 text-[10px] sm:text-xs">
+                    {optimizedImages.length} image{optimizedImages.length > 1 ? "s" : ""} optimized
+                  </p>
+                </div>
 
-                  {/* Image Details */}
-                  <div className="flex flex-col gap-3 sm:gap-4 w-full">
-                    {optimizedImages.map((image) => (
-                      <div key={image.id} className="group relative flex items-start gap-3 sm:gap-[21px]">
-                        <button
-                          onClick={() => handleDeleteImage(image.id)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                        >
-                          <X className="w-4 h-4 text-white" />
-                        </button>
-                        <img
-                          className="w-[50px] h-[50px] sm:w-[67px] sm:h-[67px] object-cover rounded-lg"
-                          alt="Optimized image thumbnail"
-                          src={image.thumbnail}
-                        />
-                        <div className="flex flex-col items-start gap-0.5 sm:gap-1 flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white truncate w-full">
-                            {image.name}
-                          </h3>
-                          <div className="flex items-start gap-[12px] sm:gap-[18px]">
-                            <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
-                              {image.format}
-                            </p>
-                            <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
-                              {image.originalSize}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-start justify-center gap-0.5 sm:gap-1">
-                          <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-green-600">
-                            Optimized
+                {/* Image Details */}
+                <div className="flex flex-col gap-3 sm:gap-4 w-full">
+                  {optimizedImages.map((image) => (
+                    <div key={image.id} className="group relative flex items-start gap-3 sm:gap-[21px]">
+                      <button
+                        onClick={() => handleDeleteImage(image.id)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                      <img
+                        className="w-[50px] h-[50px] sm:w-[67px] sm:h-[67px] object-cover rounded-lg"
+                        alt="Optimized image thumbnail"
+                        src={image.thumbnail}
+                      />
+                      <div className="flex flex-col items-start gap-0.5 sm:gap-1 flex-1 min-w-0">
+                        <h3 className="text-base sm:text-lg font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white truncate w-full">
+                          {image.name}
+                        </h3>
+                        <div className="flex items-start gap-[12px] sm:gap-[18px]">
+                          <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
+                            {image.format}
                           </p>
                           <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
-                            {image.optimizedSize}
+                            {image.originalSize}
                           </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Download Button */}
-                  <Button 
-                    className="w-full h-[40px] sm:h-[49px] bg-[#ffbc04] rounded-lg text-black hover:bg-[#e6aa04] font-semibold text-sm sm:text-base"
-                    onClick={handleDownloadAll}
-                  >
-                    Download All Images
-                  </Button>
+                      <div className="flex flex-col items-start justify-center gap-0.5 sm:gap-1">
+                        <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-green-600">
+                          Optimized
+                        </p>
+                        <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
+                          {image.optimizedSize}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
 
-         <div className="w-full mt-8">
-  <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-  <script>
-    kofiWidgetOverlay.draw('ahmadmizanh', {
-      'type': 'floating-chat',
-      'floating-chat.donateButton.text': 'Tip Me',
-      'floating-chat.donateButton.background-color': '#f45d22',
-      'floating-chat.donateButton.text-color': '#fff'
-    });
-  </script>
-</div>
-          </div>
+                {/* Download Button */}
+                <Button
+                  className="w-full h-[40px] sm:h-[49px] bg-[#ffbc04] rounded-lg text-black hover:bg-[#e6aa04] font-semibold text-sm sm:text-base"
+                  onClick={handleDownloadAll}
+                >
+                  Download All Images
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Ko-fi Widget */}
+        <div className="w-full mt-8">
+          <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
+          <script>
+            kofiWidgetOverlay.draw('ahmadmizanh', {
+              'type': 'floating-chat',
+              'floating-chat.donateButton.text': 'Tip Me',
+              'floating-chat.donateButton.background-color': '#f45d22',
+              'floating-chat.donateButton.text-color': '#fff'
+            });
+          </script>
         </div>
       </div>
     </div>
