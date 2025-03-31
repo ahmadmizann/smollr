@@ -22,6 +22,21 @@ interface ProcessingImage {
   progress: number;
 }
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js";
+    script.async = true;
+    script.onload = () => {
+      window.kofiWidgetOverlay?.draw("ahmadmizanh", {
+        type: "floating-chat",
+        "floating-chat.donateButton.text": "Tip Me",
+        "floating-chat.donateButton.background-color": "#f45d22",
+        "floating-chat.donateButton.text-color": "#fff"
+      });
+    };
+    document.body.appendChild(script);
+  }, []);
+
 export const Finish = (): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false);
   const [optimizedImages, setOptimizedImages] = useState<OptimizedImage[]>([]);
