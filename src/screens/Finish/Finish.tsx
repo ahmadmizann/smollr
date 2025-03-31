@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
@@ -28,43 +28,20 @@ export const Finish = (): JSX.Element => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProcessing, setCurrentProcessing] = useState<ProcessingImage | null>(null);
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js";
-    script.async = true;
-    document.body.appendChild(script);
-
-    const kofiScript = document.createElement("script");
-    kofiScript.innerHTML = `
-      kofiWidgetOverlay.draw('ahmadmizanh', {
-        'type': 'floating-chat',
-        'floating-chat.donateButton.text': 'Tip Me',
-        'floating-chat.donateButton.background-color': '#f45d22',
-        'floating-chat.donateButton.text-color': '#fff'
-      });
-    `;
-    document.body.appendChild(kofiScript);
-
-    return () => {
-      document.body.removeChild(script);
-      document.body.removeChild(kofiScript);
-    };
-  }, []);
-
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
+    if (bytes === 0) return '0 Bytes';
     const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const handleImageOptimization = async (file: File) => {
     try {
       setCurrentProcessing({
         name: file.name,
-        format: file.type.split("/")[1].toUpperCase(),
-        progress: 0,
+        format: file.type.split('/')[1].toUpperCase(),
+        progress: 0
       });
 
       const options = {
@@ -72,8 +49,8 @@ export const Finish = (): JSX.Element => {
         maxWidthOrHeight: 1920,
         useWebWorker: true,
         onProgress: (progress: number) => {
-          setCurrentProcessing((prev) => (prev ? { ...prev, progress } : null));
-        },
+          setCurrentProcessing(prev => prev ? { ...prev, progress } : null);
+        }
       };
 
       const compressedFile = await imageCompression(file, options);
@@ -82,25 +59,25 @@ export const Finish = (): JSX.Element => {
       const optimizedImage: OptimizedImage = {
         id: crypto.randomUUID(),
         name: file.name,
-        format: file.type.split("/")[1].toUpperCase(),
+        format: file.type.split('/')[1].toUpperCase(),
         originalSize: formatFileSize(file.size),
         optimizedSize: formatFileSize(compressedFile.size),
         thumbnail,
         blob: compressedFile,
       };
 
-      setOptimizedImages((prev) => [...prev, optimizedImage]);
+      setOptimizedImages(prev => [...prev, optimizedImage]);
     } catch (error) {
-      console.error("Error optimizing image:", error);
+      console.error('Error optimizing image:', error);
     }
   };
 
   const handleFiles = async (files: FileList) => {
     setIsProcessing(true);
-    const imageFiles = Array.from(files).filter((file) => file.type.startsWith("image/"));
+    const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
 
     if (imageFiles.length > 10) {
-      alert("Please select up to 10 images only");
+      alert('Please select up to 10 images only');
       setIsProcessing(false);
       return;
     }
@@ -136,7 +113,7 @@ export const Finish = (): JSX.Element => {
 
   const handleDownloadAll = () => {
     optimizedImages.forEach((image) => {
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = URL.createObjectURL(image.blob);
       link.download = `optimized-${image.name}`;
       document.body.appendChild(link);
@@ -146,22 +123,22 @@ export const Finish = (): JSX.Element => {
   };
 
   const handleDeleteImage = (id: string) => {
-    setOptimizedImages((prev) => prev.filter((img) => img.id !== id));
+    setOptimizedImages(prev => prev.filter(img => img.id !== id));
   };
 
   const getTotalOptimization = () => {
     if (optimizedImages.length === 0) return 0;
 
     const originalSize = optimizedImages.reduce((acc, img) => {
-      const size = parseFloat(img.originalSize.split(" ")[0]);
-      const unit = img.originalSize.split(" ")[1];
-      return acc + (unit === "MB" ? size * 1024 : size);
+      const size = parseFloat(img.originalSize.split(' ')[0]);
+      const unit = img.originalSize.split(' ')[1];
+      return acc + (unit === 'MB' ? size * 1024 : size);
     }, 0);
 
     const optimizedSize = optimizedImages.reduce((acc, img) => {
-      const size = parseFloat(img.optimizedSize.split(" ")[0]);
-      const unit = img.optimizedSize.split(" ")[1];
-      return acc + (unit === "MB" ? size * 1024 : size);
+      const size = parseFloat(img.optimizedSize.split(' ')[0]);
+      const unit = img.optimizedSize.split(' ')[1];
+      return acc + (unit === 'MB' ? size * 1024 : size);
     }, 0);
 
     const savings = ((originalSize - optimizedSize) / originalSize) * 100;
@@ -219,11 +196,11 @@ export const Finish = (): JSX.Element => {
 
         {/* Drop Zone */}
         <Card
-          className={`w-full h-[200px] sm:h-[254px] ${isDragging ? "bg-[#ffbc04]/10" : "bg-[#d7deeb3d] dark:bg-gray-800/50"} rounded-[28px] border-2 border-dashed ${isDragging ? "border-[#ffbc04]" : "border-[#a4a4a4] dark:border-gray-700"} cursor-pointer transition-colors duration-200`}
+          className={`w-full h-[200px] sm:h-[254px] ${isDragging ? 'bg-[#ffbc04]/10' : 'bg-[#d7deeb3d] dark:bg-gray-800/50'} rounded-[28px] border-2 border-dashed ${isDragging ? 'border-[#ffbc04]' : 'border-[#a4a4a4] dark:border-gray-700'} cursor-pointer transition-colors duration-200`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={() => document.getElementById("fileInput")?.click()}
+          onClick={() => document.getElementById('fileInput')?.click()}
         >
           <input
             type="file"
@@ -282,7 +259,7 @@ export const Finish = (): JSX.Element => {
                     Smoll Just saved you {getTotalOptimization()}%
                   </h2>
                   <p className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#1e1e1e80] dark:text-gray-400 text-[10px] sm:text-xs">
-                    {optimizedImages.length} image{optimizedImages.length > 1 ? "s" : ""} optimized
+                    {optimizedImages.length} image{optimizedImages.length > 1 ? 's' : ''} optimized
                   </p>
                 </div>
 
@@ -340,15 +317,13 @@ export const Finish = (): JSX.Element => {
 
         {/* Ko-fi Widget */}
         <div className="w-full mt-8">
-          <script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-          <script>
-            kofiWidgetOverlay.draw('ahmadmizanh', {
-              'type': 'floating-chat',
-              'floating-chat.donateButton.text': 'Tip Me',
-              'floating-chat.donateButton.background-color': '#f45d22',
-              'floating-chat.donateButton.text-color': '#fff'
-            });
-          </script>
+          <div id="kofi-widget" style={{ backgroundColor: 'transparent', border: 'none', width: '100%', height: '712px' }}>
+            <iframe
+              src="https://ko-fi.com/ahmadmizanh/?hidefeed=true&widget=true&embed=true&preview=true"
+              style={{ border: 'none', width: '100%', height: '100%' }}
+              title="ahmadmizanh"
+            />
+          </div>
         </div>
       </div>
     </div>
