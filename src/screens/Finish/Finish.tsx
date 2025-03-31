@@ -316,13 +316,13 @@ export const Finish = (): JSX.Element => {
 
           {/* Ko-fi Widget */}
           <div className="w-full mt-8">
-          <div id="kofi-widget" style={{ backgroundColor: 'transparent', border: 'none', width: '100%', height: '712px' }}>
-            <iframe
+            <div id="kofi-widget" style={{ backgroundColor: 'transparent', border: 'none', width: '100%', height: '712px' }}>
+              <iframe
               src="https://ko-fi.com/ahmadmizanh/?hidefeed=true&widget=true&embed=true&preview=true"
               style={{ border: 'none', width: '100%', height: '100%' }}
               title="ahmadmizanh"
-            />
-          </div>
+              />
+            </div>
         </div>
       </div>
     </div>
