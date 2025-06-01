@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build"
   },
-  "dependencies": {
+   "dependencies": {
     "clsx": "2.1.1",
     "lucide-react": "^0.453.0",
     "react": "^18.2.0",
@@ -19,8 +19,7 @@
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.0",
     "browser-image-compression": "^2.0.2",
-    "next-themes": "^0.2.1",
-    "sharp": "^0.33.2"
+    "next-themes": "^0.2.1"
   },
   "devDependencies": {
     "@types/react": "18.2.0",
