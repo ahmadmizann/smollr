@@ -177,7 +177,7 @@ export const Finish = (): JSX.Element => {
     return () => {
       const existingScript = document.getElementById('kofi-widget-script');
       if (existingScript) {
-        document.body.removeChild(existingScript);Add commentMore actions
+        document.body.removeChild(existingScript);
       }
       // You might need more specific cleanup if the widget adds elements
       // with specific IDs or classes that you want to remove.
