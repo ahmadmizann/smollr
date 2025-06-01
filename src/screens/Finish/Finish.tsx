@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react"; // <-- Import useEffect
+import React, { useCallback, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
@@ -28,8 +28,6 @@ export const Finish = (): JSX.Element => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProcessing, setCurrentProcessing] = useState<ProcessingImage | null>(null);
 
-  // --- Existing functions (formatFileSize, handleImageOptimization, etc.) ---
-  // ... (keep all your existing functions here) ...
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -47,9 +45,11 @@ export const Finish = (): JSX.Element => {
       });
 
       const options = {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
+        maxSizeMB: 2,
+        maxWidthOrHeight: 2048,
         useWebWorker: true,
+        initialQuality: 0.9,
+        alwaysKeepResolution: true,
         onProgress: (progress: number) => {
           setCurrentProcessing(prev => prev ? { ...prev, progress } : null);
         }
@@ -77,7 +77,7 @@ export const Finish = (): JSX.Element => {
   const handleFiles = async (files: FileList) => {
     setIsProcessing(true);
     const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-
+    
     if (imageFiles.length > 10) {
       alert('Please select up to 10 images only');
       setIsProcessing(false);
@@ -130,7 +130,7 @@ export const Finish = (): JSX.Element => {
 
   const getTotalOptimization = () => {
     if (optimizedImages.length === 0) return 0;
-
+    
     const originalSize = optimizedImages.reduce((acc, img) => {
       const size = parseFloat(img.originalSize.split(' ')[0]);
       const unit = img.originalSize.split(' ')[1];
@@ -146,57 +146,10 @@ export const Finish = (): JSX.Element => {
     const savings = ((originalSize - optimizedSize) / originalSize) * 100;
     return Math.round(savings);
   };
-  // --- End of existing functions ---
 
-
-  // --- Add Ko-fi Widget ---
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
-    script.async = true;
-    script.id = 'kofi-widget-script'; // Add an ID for easy removal in cleanup
-
-    script.onload = () => {
-      // Check if the function exists before calling (TypeScript might need 'as any')
-      if (typeof (window as any).kofiWidgetOverlay?.draw === 'function') {
-        (window as any).kofiWidgetOverlay.draw('ahmadmizanh', {
-          'type': 'floating-chat',
-          'floating-chat.donateButton.text': 'Tip Me',
-          'floating-chat.donateButton.background-color': '#00b9fe',
-          'floating-chat.donateButton.text-color': '#fff'
-        });
-      } else {
-        console.error("Ko-fi widget script loaded, but draw function not found.");
-      }
-    };
-
-    script.onerror = () => {
-        console.error("Failed to load Ko-fi widget script.");
-    }
-
-    document.body.appendChild(script);
-
-    // Cleanup function: remove the script when the component unmounts
-    return () => {
-      const existingScript = document.getElementById('kofi-widget-script');
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-      // You might need more specific cleanup if the widget adds elements
-      // with specific IDs or classes that you want to remove.
-      // For example, inspect the element added by Ko-fi and find its container.
-      // const kofiContainer = document.getElementById('kofi-chat-widget-container'); // Example ID
-      // if (kofiContainer) kofiContainer.remove();
-    };
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  // --- Return JSX ---
   return (
     <div className="bg-white dark:bg-[#0f172a] flex justify-center w-full min-h-screen">
       <div className="bg-white dark:bg-[#0f172a] w-full max-w-[1440px] min-h-screen relative px-4 sm:px-6">
-        {/* ... rest of your JSX ... */}
-        {/* The Ko-fi widget will be added dynamically by the useEffect hook */}
-
         <div className="flex flex-col w-full max-w-[452px] items-center gap-[18px] mx-auto pt-6 sm:pt-[47px]">
           {/* Header */}
           <div className="flex items-start justify-between w-full">
@@ -236,14 +189,14 @@ export const Finish = (): JSX.Element => {
                 </div>
               </div>
             </div>
-
+            
             <ThemeToggle />
           </div>
 
           <Separator className="w-full dark:border-gray-700" />
 
           {/* Drop Zone */}
-          <Card
+          <Card 
             className={`w-full h-[200px] sm:h-[254px] ${isDragging ? 'bg-[#ffbc04]/10' : 'bg-[#d7deeb3d] dark:bg-gray-800/50'} rounded-[28px] border-2 border-dashed ${isDragging ? 'border-[#ffbc04]' : 'border-[#a4a4a4] dark:border-gray-700'} cursor-pointer transition-colors duration-200`}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -262,7 +215,7 @@ export const Finish = (): JSX.Element => {
               {isProcessing && currentProcessing ? (
                 <div className="flex flex-col items-center w-full max-w-md p-4 sm:p-6">
                   <h3 className="text-[#ffbc04] font-bold text-lg sm:text-xl mb-2">
-                    Wait a minute... ({optimizedImages.length}/{/* This count might be slightly off during the very last processing step, consider adjusting logic if needed */ optimizedImages.length + 1})
+                    Wait a minute... ({optimizedImages.length}/{optimizedImages.length + 1})
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
                     Your image is being optimized
@@ -273,7 +226,7 @@ export const Finish = (): JSX.Element => {
                       <span>{currentProcessing.format}</span>
                     </div>
                     <div className="w-full h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
+                      <div 
                         className="h-full bg-[#ffbc04] transition-all duration-300"
                         style={{ width: `${currentProcessing.progress}%` }}
                       />
@@ -317,7 +270,7 @@ export const Finish = (): JSX.Element => {
                       <div key={image.id} className="group relative flex items-start gap-3 sm:gap-[21px]">
                         <button
                           onClick={() => handleDeleteImage(image.id)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10" // Added z-index
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                         >
                           <X className="w-4 h-4 text-white" />
                         </button>
@@ -352,7 +305,7 @@ export const Finish = (): JSX.Element => {
                   </div>
 
                   {/* Download Button */}
-                  <Button
+                  <Button 
                     className="w-full h-[40px] sm:h-[49px] bg-[#ffbc04] rounded-lg text-black hover:bg-[#e6aa04] font-semibold text-sm sm:text-base"
                     onClick={handleDownloadAll}
                   >
@@ -367,13 +320,3 @@ export const Finish = (): JSX.Element => {
     </div>
   );
 };
-
-// If you don't have global declarations for window properties:
-declare global {
-    interface Window {
-        kofiWidgetOverlay?: {
-            draw: (username: string, config: Record<string, any>) => void;
-            // Add other methods if you use them
-        };
-    }
-}
