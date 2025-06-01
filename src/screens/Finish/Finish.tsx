@@ -146,7 +146,49 @@ export const Finish = (): JSX.Element => {
     const savings = ((originalSize - optimizedSize) / originalSize) * 100;
     return Math.round(savings);
   };
+ // --- Add Ko-fi Widget ---Add commentMore actions
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
+    script.async = true;
+    script.id = 'kofi-widget-script'; // Add an ID for easy removal in cleanup
 
+    script.onload = () => {
+      // Check if the function exists before calling (TypeScript might need 'as any')
+      if (typeof (window as any).kofiWidgetOverlay?.draw === 'function') {
+        (window as any).kofiWidgetOverlay.draw('ahmadmizanh', {
+          'type': 'floating-chat',
+          'floating-chat.donateButton.text': 'Tip Me',
+          'floating-chat.donateButton.background-color': '#00b9fe',
+          'floating-chat.donateButton.text-color': '#fff'
+        });
+      } else {
+        console.error("Ko-fi widget script loaded, but draw function not found.");
+      }
+    };
+
+    script.onerror = () => {
+        console.error("Failed to load Ko-fi widget script.");
+    }
+
+    document.body.appendChild(script);
+
+    // Cleanup function: remove the script when the component unmounts
+    return () => {
+      const existingScript = document.getElementById('kofi-widget-script');
+      if (existingScript) {
+        document.body.removeChild(existingScript);Add commentMore actions
+      }
+      // You might need more specific cleanup if the widget adds elements
+      // with specific IDs or classes that you want to remove.
+      // For example, inspect the element added by Ko-fi and find its container.
+      // const kofiContainer = document.getElementById('kofi-chat-widget-container'); // Example ID
+      // if (kofiContainer) kofiContainer.remove();
+    };
+  }, []); // Empty dependency array ensures this runs only once on mount
+
+  // --- Return JSX ---
+  
   return (
     <div className="bg-white dark:bg-[#0f172a] flex justify-center w-full min-h-screen">
       <div className="bg-white dark:bg-[#0f172a] w-full max-w-[1440px] min-h-screen relative px-4 sm:px-6">
@@ -320,3 +362,13 @@ export const Finish = (): JSX.Element => {
     </div>
   );
 };
+
+// If you don't have global declarations for window properties:
+declare global {
+    interface Window {
+        kofiWidgetOverlay?: {
+            draw: (username: string, config: Record<string, any>) => void;
+            // Add other methods if you use them
+        };
+    }
+}
