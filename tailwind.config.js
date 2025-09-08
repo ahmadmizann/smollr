@@ -50,9 +50,11 @@ module.exports = {
       },
       fontFamily: {
         sans: [
-          "ui-sans-serif",
-          "system-ui",
-          "sans-serif",
+          "SF Compact Rounded",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
           '"Apple Color Emoji"',
           '"Segoe UI Emoji"',
           '"Segoe UI Symbol"',
