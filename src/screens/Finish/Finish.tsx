@@ -37,6 +37,10 @@ export const Finish = (): JSX.Element => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const calculateCompressionRatio = (originalSize: number, compressedSize: number): number => {
+    return Math.round(((originalSize - compressedSize) / originalSize) * 100);
+  };
+
   const handleImageOptimization = async (file: File) => {
     try {
       setCurrentProcessing({
@@ -58,6 +62,7 @@ export const Finish = (): JSX.Element => {
 
       const compressedFile = await imageCompression(file, options);
       const thumbnail = URL.createObjectURL(compressedFile);
+      const compressionRatio = calculateCompressionRatio(file.size, compressedFile.size);
 
       const optimizedImage: OptimizedImage = {
         id: crypto.randomUUID(),
@@ -67,6 +72,7 @@ export const Finish = (): JSX.Element => {
         optimizedSize: formatFileSize(compressedFile.size),
         thumbnail,
         blob: compressedFile,
+        compressionRatio
       };
 
       setOptimizedImages(prev => [...prev, optimizedImage]);
@@ -78,7 +84,7 @@ export const Finish = (): JSX.Element => {
   const handleFiles = async (files: FileList) => {
     setIsProcessing(true);
     const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
-
+    
     if (imageFiles.length > 10) {
       alert('Please select up to 10 images only');
       setIsProcessing(false);
@@ -131,248 +137,249 @@ export const Finish = (): JSX.Element => {
 
   const getTotalOptimization = () => {
     if (optimizedImages.length === 0) return 0;
-
-    const originalSize = optimizedImages.reduce((acc, img) => {
+    
+    const totalOriginal = optimizedImages.reduce((acc, img) => {
       const size = parseFloat(img.originalSize.split(' ')[0]);
       const unit = img.originalSize.split(' ')[1];
       return acc + (unit === 'MB' ? size * 1024 : size);
     }, 0);
 
-    const optimizedSize = optimizedImages.reduce((acc, img) => {
+    const totalOptimized = optimizedImages.reduce((acc, img) => {
       const size = parseFloat(img.optimizedSize.split(' ')[0]);
       const unit = img.optimizedSize.split(' ')[1];
       return acc + (unit === 'MB' ? size * 1024 : size);
     }, 0);
 
-    const savings = ((originalSize - optimizedSize) / originalSize) * 100;
-    return Math.round(savings);
+    return Math.round(((totalOriginal - totalOptimized) / totalOriginal) * 100);
   };
 
-  // --- Add Ko-fi Widget ---
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://storage.ko-fi.com/cdn/scripts/overlay-widget.js';
-    script.async = true;
-    script.id = 'kofi-widget-script'; // Add an ID for easy removal in cleanup
-
-    script.onload = () => {
-      // Check if the function exists before calling (TypeScript might need 'as any')
-      if (typeof (window as any).kofiWidgetOverlay?.draw === 'function') {
-        (window as any).kofiWidgetOverlay.draw('ahmadmizanh', {
-          'type': 'floating-chat',
-          'floating-chat.donateButton.text': 'Tip Me',
-          'floating-chat.donateButton.background-color': '#00b9fe',
-          'floating-chat.donateButton.text-color': '#fff'
-        });
-      } else {
-        console.error("Ko-fi widget script loaded, but draw function not found.");
-      }
-    };
-
-    script.onerror = () => {
-        console.error("Failed to load Ko-fi widget script.");
-    }
-
-    document.body.appendChild(script);
-
-    // Cleanup function: remove the script when the component unmounts
-    return () => {
-      const existingScript = document.getElementById('kofi-widget-script');
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-      // You might need more specific cleanup if the widget adds elements
-      // with specific IDs or classes that you want to remove.
-      // For example, inspect the element added by Ko-fi and find its container.
-      // const kofiContainer = document.getElementById('kofi-chat-widget-container'); // Example ID
-      // if (kofiContainer) kofiContainer.remove();
-    };
-  }, []); // Empty dependency array ensures this runs only once on mount
-
-  // --- Return JSX ---
   return (
-    <div className="bg-white dark:bg-[#0f172a] flex justify-center w-full min-h-screen">
-      <div className="bg-white dark:bg-[#0f172a] w-full max-w-[1440px] min-h-screen relative px-4 sm:px-6">
-        {/* ... rest of your JSX ... */}
-        {/* The Ko-fi widget will be added dynamically by the useEffect hook */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 relative overflow-hidden">
+      {/* Apple-style background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-amber-400/20 to-orange-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-blue-400/20 to-purple-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-pink-400/10 to-violet-500/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
 
-        <div className="flex flex-col w-full max-w-[452px] items-center gap-[18px] mx-auto pt-6 sm:pt-[47px]">
-          {/* Header */}
-          <div className="flex items-start justify-between w-full">
-            <div className="flex items-start gap-2 flex-wrap sm:flex-nowrap">
-              <div className="flex flex-col w-12 h-12 sm:w-16 sm:h-16 items-center justify-center gap-2.5 px-2 py-3.5 bg-[#ffbc04] rounded-[28px] shrink-0">
-                <div className="relative w-[34.5px] h-[32.5px] sm:w-[44.5px] sm:h-[42.5px]">
-                  <img className="absolute w-[7px] h-2.5 sm:w-[9px] sm:h-3.5 top-[22px] sm:top-[29px] left-1.5 sm:left-2" alt="Clip path group" src="/clip-path-group.png" />
-                  <img className="absolute w-1.5 h-2.5 sm:w-2 sm:h-3 top-[22px] sm:top-[29px] left-3 sm:left-3.5" alt="Clip path group" src="/clip-path-group-1.png" />
-                  <img className="absolute w-1 h-[7px] sm:w-1.5 sm:h-[9px] top-5 sm:top-7 left-[15px] sm:left-[19px]" alt="Clip path group" src="/clip-path-group-2.png" />
-                  <img className="absolute w-[26px] h-[20px] sm:w-[34px] sm:h-[26px] top-2.5 sm:top-3.5 left-0" alt="Clip path group" src="/clip-path-group-3.png" />
-                  <img className="absolute w-3 h-[8px] sm:w-4 sm:h-[11px] top-[17px] sm:top-[22px] left-[8px] sm:left-[11px]" alt="Clip path group" src="/clip-path-group-4.png" />
-                  <img className="absolute w-[24px] h-[13px] sm:w-[31px] sm:h-[17px] top-2.5 sm:top-3.5 left-[8px] sm:left-[11px]" alt="Clip path group" src="/clip-path-group-5.png" />
-                  <img className="absolute w-0.5 h-0.5 sm:w-1 sm:h-1 top-[21px] sm:top-[27px] left-[8px] sm:left-[11px]" alt="Clip path group" src="/clip-path-group-6.png" />
-                  <img className="absolute w-2 h-[7px] sm:w-2.5 sm:h-[9px] top-[10px] sm:top-[13px] left-[18px] sm:left-[23px]" alt="Clip path group" src="/clip-path-group-7.png" />
-                  <img className="absolute w-1 h-[2px] sm:w-1.5 sm:h-[3px] top-[16px] sm:top-[21px] left-[12px] sm:left-[15px]" alt="Clip path group" src="/clip-path-group-8.png" />
-                  <img className="absolute w-3 h-[12px] sm:w-4 sm:h-[15px] top-0 left-[22px] sm:left-[29px]" alt="Vector" src="/vector-3.svg" />
-                </div>
+      <div className="container mx-auto px-6 py-12 max-w-5xl relative z-10">
+        {/* Header with your logo */}
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-6">
+            {/* Your custom logo */}
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl flex items-center justify-center shadow-2xl shadow-amber-500/25 backdrop-blur-xl border border-white/20">
+                <svg width="40" height="40" viewBox="0 0 48 48" fill="none" className="drop-shadow-lg">
+                  <path d="M19.5019 34.3397L1.5 22.8695L28.2639 29.4915L12.4923 24.6219L5.32342 10.9213L39.8935 2L53.5941 20.7985L64.5864 3.91171L105.051 10.9213L101.865 18.1163L111.105 14.1075L94.0585 30.5163V65.5643L62.0374 85L19.5019 69.547V34.3397Z" fill="#000000"/>
+                </svg>
               </div>
-
-              <div className="flex items-center gap-2.5">
-                <div className="flex flex-col w-full sm:w-[377px] items-start gap-2">
-                  <div className="flex items-center gap-2 w-full">
-                    <div className="w-fit mt-[-1.00px] font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0] leading-[normal]">
-                      <span className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0]">
-                        smollpng{" "}
-                      </span>
-                      <span className="text-[10px] sm:text-xs">by</span>
-                      <span className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#313131] dark:text-white text-xl sm:text-2xl tracking-[0]">
-                        &nbsp;
-                      </span>
-                    </div>
-                    <img className="h-4 sm:h-5 w-auto" alt="Frame" src="/frame-17.svg" />
-                  </div>
-                  <div className="w-full font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#1e1e1e80] dark:text-gray-400 text-[10px] sm:text-xs tracking-[0] leading-[normal]">
-                    Smart AVIF, WebP, PNG and JPEG Compression for Faster Websites
-                  </div>
-                </div>
-              </div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 to-orange-500 rounded-3xl blur opacity-30 animate-pulse"></div>
             </div>
-
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent tracking-tight">
+                SmollPNG
+              </h1>
+              <p className="text-slate-600 dark:text-slate-400 text-lg font-medium mt-1">
+                Smart image compression for faster websites
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
             <ThemeToggle />
           </div>
+        </div>
 
-          <Separator className="w-full dark:border-gray-700" />
-
-          {/* Drop Zone */}
-          <Card
-            className={`w-full h-[200px] sm:h-[254px] ${isDragging ? 'bg-[#ffbc04]/10' : 'bg-[#d7deeb3d] dark:bg-gray-800/50'} rounded-[28px] border-2 border-dashed ${isDragging ? 'border-[#ffbc04]' : 'border-[#a4a4a4] dark:border-gray-700'} cursor-pointer transition-colors duration-200`}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => document.getElementById('fileInput')?.click()}
-          >
-            <input
-              type="file"
-              id="fileInput"
-              className="hidden"
-              multiple
-              accept="image/*"
-              onChange={handleFileInput}
-            />
-            <CardContent className="flex flex-col items-center justify-center h-full p-0">
-              {isProcessing && currentProcessing ? (
-                <div className="flex flex-col items-center w-full max-w-md p-4 sm:p-6">
-                  <h3 className="text-[#ffbc04] font-bold text-lg sm:text-xl mb-2">
-                    Wait a minute... ({optimizedImages.length}/{optimizedImages.length + 1})
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6">
-                    Your image is being optimized
-                  </p>
-                  <div className="w-full space-y-2">
-                    <div className="flex justify-between text-xs sm:text-sm">
-                      <span className="truncate max-w-[150px] sm:max-w-[200px]">{currentProcessing.name}</span>
-                      <span>{currentProcessing.format}</span>
-                    </div>
-                    <div className="w-full h-1.5 sm:h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#ffbc04] transition-all duration-300"
-                        style={{ width: `${currentProcessing.progress}%` }}
-                      />
-                    </div>
-                  </div>
+        {/* Apple-style liquid glass stats cards */}
+        {optimizedImages.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <Card className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl shadow-black/5 hover:shadow-black/10 transition-all duration-500 hover:scale-105">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/25">
+                  <ImageIcon className="w-8 h-8 text-white drop-shadow-sm" />
                 </div>
-              ) : (
-                <>
-                  <img className="w-[90px] h-[68px] sm:w-[111px] sm:h-[85px] mb-3" alt="Group" src="/group-3.png" />
-                  <div className="flex flex-col items-center">
-                    <h2 className="font-['Plus_Jakarta_Sans',Helvetica] font-bold text-black dark:text-white text-xl sm:text-2xl">
-                      Drop your Images here
-                    </h2>
-                    <p className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#00000080] dark:text-gray-400 text-xs sm:text-sm">
-                      Up to 10 Images
-                    </p>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Results */}
-          {optimizedImages.length > 0 && (
-            <Card className="w-full bg-[#d7deeb3d] dark:bg-gray-800/50 rounded-[28px] border-2 border-dashed border-[#a4a4a4] dark:border-gray-700">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col items-start gap-[20px] sm:gap-[25px]">
-                  {/* Header */}
-                  <div className="flex flex-col items-start gap-[10px] sm:gap-[13px] w-full">
-                    <h2 className="font-['Plus_Jakarta_Sans',Helvetica] font-bold text-[#ffbc04] text-xl sm:text-2xl">
-                      Smoll Just saved you {getTotalOptimization()}%
-                    </h2>
-                    <p className="font-['Plus_Jakarta_Sans',Helvetica] font-normal text-[#1e1e1e80] dark:text-gray-400 text-[10px] sm:text-xs">
-                      {optimizedImages.length} image{optimizedImages.length > 1 ? 's' : ''} optimized
-                    </p>
-                  </div>
-
-                  {/* Image Details */}
-                  <div className="flex flex-col gap-3 sm:gap-4 w-full">
-                    {optimizedImages.map((image) => (
-                      <div key={image.id} className="group relative flex items-start gap-3 sm:gap-[21px]">
-                        <button
-                          onClick={() => handleDeleteImage(image.id)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10" // Added z-index
-                        >
-                          <X className="w-4 h-4 text-white" />
-                        </button>
-                        <img
-                          className="w-[50px] h-[50px] sm:w-[67px] sm:h-[67px] object-cover rounded-lg"
-                          alt="Optimized image thumbnail"
-                          src={image.thumbnail}
-                        />
-                        <div className="flex flex-col items-start gap-0.5 sm:gap-1 flex-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white truncate w-full">
-                            {image.name}
-                          </h3>
-                          <div className="flex items-start gap-[12px] sm:gap-[18px]">
-                            <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
-                              {image.format}
-                            </p>
-                            <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
-                              {image.originalSize}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-start justify-center gap-0.5 sm:gap-1">
-                          <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-green-600">
-                            Optimized
-                          </p>
-                          <p className="text-xs sm:text-sm font-['Plus_Jakarta_Sans',Helvetica] font-normal text-black dark:text-white">
-                            {image.optimizedSize}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Download Button */}
-                  <Button
-                    className="w-full h-[40px] sm:h-[49px] bg-[#ffbc04] rounded-lg text-black hover:bg-[#e6aa04] font-semibold text-sm sm:text-base"
-                    onClick={handleDownloadAll}
-                  >
-                    Download All Images
-                  </Button>
+                <div className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                  {optimizedImages.length}
+                </div>
+                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Images Optimized
                 </div>
               </CardContent>
             </Card>
-          )}
-        </div>
+            
+            <Card className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl shadow-black/5 hover:shadow-black/10 transition-all duration-500 hover:scale-105">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-500/25">
+                  <Sparkles className="w-8 h-8 text-white drop-shadow-sm" />
+                </div>
+                <div className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                  {getTotalOptimization()}%
+                </div>
+                <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  Size Reduction
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl shadow-black/5 hover:shadow-black/10 transition-all duration-500 hover:scale-105">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-400 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/25">
+                  <Download className="w-8 h-8 text-white drop-shadow-sm" />
+                </div>
+                <Button 
+                  onClick={handleDownloadAll}
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 shadow-xl shadow-purple-500/25 font-semibold py-3 rounded-xl backdrop-blur-sm transition-all duration-300 hover:scale-105"
+                >
+                  Download All
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Apple-style liquid glass drop zone */}
+        <Card 
+          className={`mb-12 transition-all duration-500 border-0 shadow-2xl backdrop-blur-2xl cursor-pointer group ${
+            isDragging 
+              ? 'bg-gradient-to-br from-amber-50/60 to-orange-100/60 dark:from-amber-900/20 dark:to-orange-900/20 scale-105 shadow-amber-500/20' 
+              : 'bg-white/40 dark:bg-slate-800/40 hover:bg-white/50 dark:hover:bg-slate-800/50 hover:scale-102 shadow-black/5 hover:shadow-black/10'
+          } border border-white/20 dark:border-slate-700/30`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onClick={() => document.getElementById('fileInput')?.click()}
+        >
+          <input
+            type="file"
+            id="fileInput"
+            className="hidden"
+            multiple
+            accept="image/*"
+            onChange={handleFileInput}
+          />
+          <CardContent className="p-16">
+            {isProcessing && currentProcessing ? (
+              <div className="text-center">
+                <div className="relative mb-8">
+                  <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-500 rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-blue-500/25">
+                    <Zap className="w-12 h-12 text-white animate-pulse drop-shadow-lg" />
+                  </div>
+                  <div className="absolute -inset-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-3xl blur opacity-30 animate-pulse"></div>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
+                  Optimizing Images...
+                </h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-8 font-medium">
+                  Processing {currentProcessing.name}
+                </p>
+                <div className="max-w-md mx-auto">
+                  <div className="flex justify-between text-sm mb-3 font-medium">
+                    <span className="text-slate-600 dark:text-slate-400">Progress</span>
+                    <span className="text-slate-900 dark:text-white">{Math.round(currentProcessing.progress)}%</span>
+                  </div>
+                  <div className="w-full h-4 bg-slate-200/50 dark:bg-slate-700/50 rounded-full overflow-hidden backdrop-blur-sm border border-white/20">
+                    <div 
+                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 rounded-full shadow-lg"
+                      style={{ width: `${currentProcessing.progress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className={`relative mb-8 transition-all duration-500 ${
+                  isDragging ? 'scale-110' : 'group-hover:scale-105'
+                }`}>
+                  <div className={`w-28 h-28 rounded-3xl flex items-center justify-center mx-auto shadow-2xl transition-all duration-500 ${
+                    isDragging 
+                      ? 'bg-gradient-to-br from-amber-400 to-orange-500 shadow-amber-500/30' 
+                      : 'bg-gradient-to-br from-slate-200/80 to-slate-300/80 dark:from-slate-700/80 dark:to-slate-600/80 shadow-black/10 group-hover:shadow-black/20'
+                  } backdrop-blur-xl border border-white/20`}>
+                    <Upload className={`w-14 h-14 transition-all duration-300 drop-shadow-lg ${
+                      isDragging ? 'text-white' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'
+                    }`} />
+                  </div>
+                  {!isDragging && (
+                    <div className="absolute -inset-3 bg-gradient-to-r from-blue-400/20 to-purple-500/20 rounded-3xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  )}
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
+                  {isDragging ? 'Drop your images here!' : 'Drag & drop your images'}
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg font-medium">
+                  Or click to browse • Up to 10 images • PNG, JPG, WebP supported
+                </p>
+                <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-2xl shadow-blue-500/25 font-semibold px-8 py-4 text-lg rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105">
+                  Choose Files
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Apple-style liquid glass results */}
+        {optimizedImages.length > 0 && (
+          <Card className="bg-white/40 dark:bg-slate-800/40 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl shadow-black/5">
+            <CardContent className="p-10">
+              <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-4 tracking-tight">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-400 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25">
+                  <CheckCircle className="w-6 h-6 text-white drop-shadow-sm" />
+                </div>
+                Optimization Complete!
+              </h2>
+              
+              <div className="space-y-4">
+                {optimizedImages.map((image) => (
+                  <div key={image.id} className="group relative bg-white/30 dark:bg-slate-700/30 backdrop-blur-xl rounded-2xl p-6 hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all duration-300 border border-white/20 dark:border-slate-600/20 shadow-lg hover:shadow-xl hover:scale-102">
+                    <button
+                      onClick={() => handleDeleteImage(image.id)}
+                      className="absolute top-4 right-4 w-10 h-10 bg-red-500/90 hover:bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg backdrop-blur-sm border border-white/20"
+                    >
+                      <X className="w-5 h-5 text-white drop-shadow-sm" />
+                    </button>
+                    
+                    <div className="flex items-center gap-6">
+                      <div className="relative">
+                        <img
+                          className="w-20 h-20 object-cover rounded-2xl shadow-lg border border-white/20"
+                          alt="Optimized thumbnail"
+                          src={image.thumbnail}
+                        />
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-400/20 to-purple-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-lg text-slate-900 dark:text-white truncate mb-2">
+                          {image.name}
+                        </h3>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="bg-slate-200/80 dark:bg-slate-600/80 backdrop-blur-sm px-3 py-1 rounded-lg font-semibold border border-white/20">
+                            {image.format}
+                          </span>
+                          <span className="text-slate-600 dark:text-slate-400 font-medium">
+                            {image.originalSize} → {image.optimizedSize}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className={`text-2xl font-bold mb-1 ${
+                          image.compressionRatio > 50 ? 'text-green-600 dark:text-green-400' : 
+                          image.compressionRatio > 25 ? 'text-blue-600 dark:text-blue-400' : 'text-orange-600 dark:text-orange-400'
+                        }`}>
+                          -{image.compressionRatio}%
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          saved
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
 };
-
-// If you don't have global declarations for window properties:
-declare global {
-    interface Window {
-      kofiWidgetOverlay?: {
-        draw: (username: string, config: Record<string, any>) => void;
-        // Add other methods if you use them
-      };
-    }
-}
