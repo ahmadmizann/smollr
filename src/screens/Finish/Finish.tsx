@@ -1,10 +1,10 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState } from "react";
 import imageCompression from "browser-image-compression";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { ThemeToggle } from "../../components/ui/theme-toggle";
-import { X } from "lucide-react";
+import { X, Download, Upload, Zap, Image as ImageIcon, CheckCircle, Sparkles } from "lucide-react";
 
 interface OptimizedImage {
   id: string;
@@ -14,6 +14,7 @@ interface OptimizedImage {
   optimizedSize: string;
   thumbnail: string;
   blob: Blob;
+  compressionRatio: number;
 }
 
 interface ProcessingImage {
