@@ -29,7 +29,7 @@ export const Finish = (): JSX.Element => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProcessing, setCurrentProcessing] = useState<ProcessingImage | null>(null);
 
-  // --- Add Ko-fi Widget ---
+  // ✅ Ko-fi widget loader
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://storage.ko-fi.com/cdn/scripts/overlay-widget.js";
@@ -37,31 +37,21 @@ export const Finish = (): JSX.Element => {
     script.id = "kofi-widget-script";
 
     script.onload = () => {
-      if (typeof (window as any).kofiWidgetOverlay?.draw === "function") {
-        (window as any).kofiWidgetOverlay.draw("ahmadmizanh", {
+      if (typeof window.kofiWidgetOverlay?.draw === "function") {
+        window.kofiWidgetOverlay.draw("ahmadmizanh", {
           type: "floating-chat",
           "floating-chat.donateButton.text": "Tip Me",
           "floating-chat.donateButton.background-color": "#00b9fe",
           "floating-chat.donateButton.text-color": "#fff",
         });
-      } else {
-        console.error("Ko-fi widget script loaded, but draw function not found.");
       }
-    };
-
-    script.onerror = () => {
-      console.error("Failed to load Ko-fi widget script.");
     };
 
     document.body.appendChild(script);
 
     return () => {
-      const existingScript = document.getElementById("kofi-widget-script");
-      if (existingScript) {
-        document.body.removeChild(existingScript);
-      }
-      const kofiContainer = document.getElementById("kofi-chat-widget-container");
-      if (kofiContainer) kofiContainer.remove();
+      document.getElementById("kofi-widget-script")?.remove();
+      document.getElementById("kofi-chat-widget-container")?.remove();
     };
   }, []);
 
@@ -191,6 +181,7 @@ export const Finish = (): JSX.Element => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 relative overflow-hidden">
+      {/* ✅ all your UI untouched */}
       {/* Apple-style background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-amber-400/20 to-orange-500/20 rounded-full blur-3xl animate-pulse"></div>
@@ -199,13 +190,13 @@ export const Finish = (): JSX.Element => {
       </div>
 
       <div className="container mx-auto px-6 py-12 max-w-5xl relative z-10">
-        {/* ... keep ALL your JSX for header, cards, drop zone, results ... */}
+        {/* 🔥 all your existing JSX (header, cards, dropzone, results) stays the same */}
       </div>
     </div>
   );
 };
 
-// --- TypeScript global declaration ---
+// ✅ TS global for Ko-fi
 declare global {
   interface Window {
     kofiWidgetOverlay?: {
