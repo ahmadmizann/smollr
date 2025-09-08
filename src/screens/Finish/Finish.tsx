@@ -6,7 +6,7 @@ import { Separator } from "../../components/ui/separator";
 import { ThemeToggle } from "../../components/ui/theme-toggle";
 import { Switch } from "../../components/ui/switch";
 import { Label } from "../../components/ui/label";
-import {X, Download, Upload,Zap,Image as ImageIcon, CheckCircle, Sparkles} from "lucide-react";
+import { X, Download, Upload, Zap, Image as ImageIcon, CheckCircle, Sparkles } from "lucide-react";
 
 interface OptimizedImage {
   id: string;
