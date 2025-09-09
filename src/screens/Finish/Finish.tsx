@@ -4,17 +4,19 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { ThemeToggle } from "../../components/ui/theme-toggle";
-import { X, Download, Upload, Zap, Image as ImageIcon, CheckCircle, Sparkles } from "lucide-react";
+import { X, Download, Upload, Zap, Image as ImageIcon, CheckCircle, Sparkles, Settings, RefreshCw } from "lucide-react";
 
 interface OptimizedImage {
   id: string;
   name: string;
   format: string;
+  originalFormat: string;
   originalSize: string;
   optimizedSize: string;
   thumbnail: string;
   blob: Blob;
   compressionRatio: number;
+  isConverted: boolean;
 }
 
 interface ProcessingImage {
@@ -23,11 +25,14 @@ interface ProcessingImage {
   progress: number;
 }
 
+type ConversionFormat = 'AVIF' | 'WEBP' | 'JPEG' | 'PNG';
 export const Finish = (): JSX.Element => {
   const [isDragging, setIsDragging] = useState(false);
   const [optimizedImages, setOptimizedImages] = useState<OptimizedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProcessing, setCurrentProcessing] = useState<ProcessingImage | null>(null);
+  const [manualConversion, setManualConversion] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState<ConversionFormat>('WEBP');
   
   // ✅ Ko-fi widget loader
   useEffect(() => {
@@ -66,13 +71,61 @@ export const Finish = (): JSX.Element => {
     return Math.round(((originalSize - compressedSize) / originalSize) * 100);
   };
 
+  const convertImageFormat = async (file: File, targetFormat: ConversionFormat): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+        
+        const mimeType = targetFormat === 'AVIF' ? 'image/avif' :
+                        targetFormat === 'WEBP' ? 'image/webp' :
+                        targetFormat === 'JPEG' ? 'image/jpeg' : 'image/png';
+        
+        const quality = targetFormat === 'PNG' ? undefined : 0.9;
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to convert image'));
+          }
+        }, mimeType, quality);
+      };
+      
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  };
   const handleImageOptimization = async (file: File) => {
     try {
+      const originalFormat = file.type.split('/')[1].toUpperCase();
+      let targetFormat = originalFormat;
+      let isConverted = false;
+      
+      if (manualConversion) {
+        targetFormat = selectedFormat;
+        isConverted = originalFormat !== selectedFormat;
+      }
+      
       setCurrentProcessing({
         name: file.name,
-        format: file.type.split('/')[1].toUpperCase(),
+        format: targetFormat,
         progress: 0
       });
+
+      let processedFile = file;
+      
+      // Convert format if needed
+      if (manualConversion && isConverted) {
+        setCurrentProcessing(prev => prev ? { ...prev, progress: 25 } : null);
+        const convertedBlob = await convertImageFormat(file, selectedFormat);
+        processedFile = new File([convertedBlob], file.name, { type: convertedBlob.type });
+      }
 
       const options = {
         maxSizeMB: 2,
@@ -81,23 +134,26 @@ export const Finish = (): JSX.Element => {
         initialQuality: 0.9,
         alwaysKeepResolution: true,
         onProgress: (progress: number) => {
-          setCurrentProcessing(prev => prev ? { ...prev, progress } : null);
+          const adjustedProgress = manualConversion && isConverted ? 25 + (progress * 0.75) : progress;
+          setCurrentProcessing(prev => prev ? { ...prev, progress: adjustedProgress } : null);
         }
       };
 
-      const compressedFile = await imageCompression(file, options);
+      const compressedFile = await imageCompression(processedFile, options);
       const thumbnail = URL.createObjectURL(compressedFile);
       const compressionRatio = calculateCompressionRatio(file.size, compressedFile.size);
 
       const optimizedImage: OptimizedImage = {
         id: crypto.randomUUID(),
         name: file.name,
-        format: file.type.split('/')[1].toUpperCase(),
+        format: targetFormat,
+        originalFormat,
         originalSize: formatFileSize(file.size),
         optimizedSize: formatFileSize(compressedFile.size),
         thumbnail,
         blob: compressedFile,
-        compressionRatio
+        compressionRatio,
+        isConverted
       };
 
       setOptimizedImages(prev => [...prev, optimizedImage]);
@@ -149,7 +205,9 @@ export const Finish = (): JSX.Element => {
     optimizedImages.forEach((image) => {
       const link = document.createElement('a');
       link.href = URL.createObjectURL(image.blob);
-      link.download = `optimized-${image.name}`;
+      const extension = image.format.toLowerCase();
+      const nameWithoutExt = image.name.replace(/\.[^/.]+$/, "");
+      link.download = `${nameWithoutExt}-optimized.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -286,15 +344,19 @@ export const Finish = (): JSX.Element => {
               <div className="text-center">
                 <div className="relative mb-6 sm:mb-8">
                   <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl sm:rounded-3xl flex items-center justify-center mx-auto shadow-2xl shadow-blue-500/25 animate-float">
-                    <Zap className="w-10 h-10 sm:w-12 sm:h-12 text-white animate-pulse drop-shadow-lg" />
+                    {manualConversion ? (
+                      <RefreshCw className="w-10 h-10 sm:w-12 sm:h-12 text-white animate-spin drop-shadow-lg" />
+                    ) : (
+                      <Zap className="w-10 h-10 sm:w-12 sm:h-12 text-white animate-pulse drop-shadow-lg" />
+                    )}
                   </div>
                   <div className="absolute -inset-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-2xl sm:rounded-3xl blur opacity-30 animate-glow"></div>
                 </div>
                 <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-3">
-                  Optimizing Images...
+                  {manualConversion ? 'Converting & Optimizing...' : 'Optimizing Images...'}
                 </h3>
                 <p className="text-slate-600 dark:text-slate-400 mb-6 sm:mb-8 font-medium text-sm sm:text-base">
-                  Processing {currentProcessing.name}
+                  Processing {currentProcessing.name} {manualConversion ? `→ ${currentProcessing.format}` : ''}
                 </p>
                 <div className="max-w-xs sm:max-w-md mx-auto">
                   <div className="flex justify-between text-xs sm:text-sm mb-2 sm:mb-3 font-medium">
@@ -333,6 +395,61 @@ export const Finish = (): JSX.Element => {
                 <p className="text-slate-600 dark:text-slate-400 mb-6 sm:mb-8 text-sm sm:text-base lg:text-lg font-medium max-w-md mx-auto">
                   Or click to browse • Up to 10 images • PNG, JPG, WebP supported
                 </p>
+                
+                {/* Manual Conversion Toggle */}
+                <div className="mb-6 sm:mb-8">
+                  <div className="flex items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setManualConversion(!manualConversion);
+                      }}
+                      className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 transition-all duration-300 flex items-center justify-center ${
+                        manualConversion 
+                          ? 'bg-blue-500 border-blue-500 shadow-lg shadow-blue-500/25' 
+                          : 'border-slate-300 dark:border-slate-600 hover:border-blue-400'
+                      }`}
+                    >
+                      {manualConversion && (
+                        <div className="w-2 h-2 sm:w-3 sm:h-3 bg-white rounded-full"></div>
+                      )}
+                    </button>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium text-sm sm:text-base">
+                      Convert my images manually
+                    </span>
+                  </div>
+                  
+                  {/* Format Selection */}
+                  {manualConversion && (
+                    <div className="animate-slide-up">
+                      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 max-w-md mx-auto">
+                        {(['AVIF', 'WEBP', 'JPEG', 'PNG'] as ConversionFormat[]).map((format) => (
+                          <button
+                            key={format}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedFormat(format);
+                            }}
+                            className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 border backdrop-blur-sm ${
+                              selectedFormat === format
+                                ? 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25 scale-105'
+                                : 'bg-white/50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 border-white/20 dark:border-slate-600/20 hover:bg-white/70 dark:hover:bg-slate-700/70 hover:scale-102'
+                            }`}
+                          >
+                            {format}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-3 sm:mt-4 font-medium">
+                        {selectedFormat === 'AVIF' && 'Best compression, modern browsers'}
+                        {selectedFormat === 'WEBP' && 'Great compression, wide support'}
+                        {selectedFormat === 'JPEG' && 'Universal support, good for photos'}
+                        {selectedFormat === 'PNG' && 'Lossless, supports transparency'}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
                 <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-2xl shadow-blue-500/25 font-semibold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-xl sm:rounded-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-blue-500/40">
                   Choose Files
                 </Button>
@@ -349,7 +466,7 @@ export const Finish = (): JSX.Element => {
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-400 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 animate-glow">
                   <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white drop-shadow-sm" />
                 </div>
-                Optimization Complete!
+                {manualConversion ? 'Conversion & Optimization Complete!' : 'Optimization Complete!'}
               </h2>
               
               <div className="space-y-3 sm:space-y-4">
@@ -378,9 +495,21 @@ export const Finish = (): JSX.Element => {
                         </h3>
                         <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                           <span className="bg-slate-200/80 dark:bg-slate-600/80 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-md sm:rounded-lg font-semibold border border-white/20">
-                            {image.format}
-                          </span>
-                          <span className="text-slate-600 dark:text-slate-400 font-medium text-center">
+                            {image.isConverted ? (
+                              <div className="flex items-center gap-1 sm:gap-2">
+                                <span className="bg-orange-200/80 dark:bg-orange-600/80 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-md sm:rounded-lg font-semibold border border-white/20 text-xs">
+                                  {image.originalFormat}
+                                </span>
+                                <span className="text-slate-400 dark:text-slate-500">→</span>
+                                <span className="bg-green-200/80 dark:bg-green-600/80 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-md sm:rounded-lg font-semibold border border-white/20 text-xs">
+                                  {image.format}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="bg-slate-200/80 dark:bg-slate-600/80 backdrop-blur-sm px-2 sm:px-3 py-1 rounded-md sm:rounded-lg font-semibold border border-white/20">
+                                {image.format}
+                              </span>
+                            )}
                             {image.originalSize} → {image.optimizedSize}
                           </span>
                         </div>
@@ -394,7 +523,7 @@ export const Finish = (): JSX.Element => {
                           -{image.compressionRatio}%
                         </div>
                         <div className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                          saved
+                          {image.isConverted ? 'converted' : 'saved'}
                         </div>
                       </div>
                     </div>
