@@ -260,7 +260,7 @@ export const Finish = (): JSX.Element => {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900 dark:from-white dark:via-slate-200 dark:to-white bg-clip-text text-transparent tracking-tight transition-all duration-300">
-                SmollPNG
+                SmollR
               </h1>
               <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base lg:text-lg font-medium mt-1 sm:mt-2 max-w-md">
                 Smart image compression for faster websites
